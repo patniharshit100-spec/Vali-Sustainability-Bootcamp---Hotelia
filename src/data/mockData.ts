@@ -1,0 +1,238 @@
+import type {
+  Message,
+  Conversation,
+  Task,
+  KPI,
+  Review,
+  Competitor,
+  Reservation,
+  Hotel,
+  User,
+} from '../types';
+
+export const mockHotel: Hotel = {
+  id: 'h1',
+  name: 'The Grand Horizon',
+  stars: 4,
+  location: 'Miami Beach, FL',
+};
+
+export const mockUser: User = {
+  id: 'u1',
+  name: 'Maria Santos',
+  role: 'General Manager',
+  initials: 'MS',
+};
+
+export const mockMessages: Message[] = [
+  {
+    id: 'm1',
+    guestName: 'James Whitfield',
+    source: 'booking',
+    subject: 'Early check-in request for tomorrow',
+    preview: 'Hi, I\'m arriving at 10am and was wondering if an early check-in would be possible...',
+    body: 'Hi, I\'m arriving at 10am and was wondering if an early check-in would be possible. My flight lands at 8:30am and I\'d love to freshen up before my meeting at noon. Happy to pay any applicable fee. Thanks!',
+    timestamp: '2026-03-19T08:30:00Z',
+    isRead: false,
+    isUrgent: true,
+    tags: ['check-in', 'early'],
+    aiSuggested: 'Thank you for reaching out, Mr. Whitfield! We\'d be happy to arrange an early check-in for you. Subject to room availability, we can have your room ready by 10:30am at no extra charge. We\'ll confirm the night before. Safe travels!',
+  },
+  {
+    id: 'm2',
+    guestName: 'Sophie Leclerc',
+    source: 'email',
+    subject: 'Complaint: Noisy neighbors last night',
+    preview: 'I\'m very disappointed with my stay so far. The guests in room 412 were extremely loud...',
+    body: 'I\'m very disappointed with my stay so far. The guests in room 412 were extremely loud until 2am and despite calling the front desk twice, nothing was done. I have an important presentation today and am exhausted. I\'d like to speak with a manager.',
+    timestamp: '2026-03-19T07:15:00Z',
+    isRead: false,
+    isUrgent: true,
+    tags: ['complaint', 'noise'],
+    aiSuggested: 'Dear Ms. Leclerc, I sincerely apologize for the disturbance last night. This is not the experience we want for our guests. I\'ve noted this and our manager will call you within the hour. As a gesture of goodwill, we\'d like to offer you a complimentary breakfast today.',
+  },
+  {
+    id: 'm3',
+    guestName: 'Carlos Rivera',
+    source: 'whatsapp',
+    subject: 'Dinner reservation at rooftop',
+    preview: 'Hi! Can I book a table for 2 tonight at the rooftop restaurant around 8pm?',
+    body: 'Hi! Can I book a table for 2 tonight at the rooftop restaurant around 8pm? We\'d prefer a table with a view if possible. It\'s our anniversary!',
+    timestamp: '2026-03-19T09:45:00Z',
+    isRead: true,
+    isUrgent: false,
+    tags: ['restaurant', 'reservation'],
+    aiSuggested: 'Congratulations on your anniversary, Mr. Rivera! I\'ve reserved a window table for 2 at 8pm tonight at our Sky Lounge. We\'ll have a small surprise waiting for you. Looking forward to making your evening special!',
+  },
+  {
+    id: 'm4',
+    guestName: 'Akira Tanaka',
+    source: 'tripadvisor',
+    subject: 'Review: Wonderful stay but one issue',
+    preview: 'Overall amazing experience. The room was spotless and the staff were incredibly helpful...',
+    body: 'Overall amazing experience. The room was spotless and the staff were incredibly helpful. The only issue was slow WiFi in room 318. Everything else was perfect — especially the breakfast buffet!',
+    timestamp: '2026-03-18T20:00:00Z',
+    isRead: true,
+    isUrgent: false,
+    tags: ['review', 'wifi'],
+  },
+  {
+    id: 'm5',
+    guestName: 'Olivia Bennett',
+    source: 'expedia',
+    subject: 'Airport transfer booking',
+    preview: 'Could you arrange an airport pickup for March 21st at 3:15pm from MIA?',
+    body: 'Could you arrange an airport pickup for March 21st at 3:15pm from MIA? There will be 2 guests with 3 large bags. Please let me know the cost.',
+    timestamp: '2026-03-19T06:00:00Z',
+    isRead: false,
+    isUrgent: false,
+    tags: ['transfer', 'airport'],
+    aiSuggested: 'Hello Ms. Bennett! We\'d be glad to arrange an airport transfer. Our sedan service from MIA on March 21st at 3:15pm is $45 flat rate for up to 3 passengers and luggage. Shall I confirm this booking for you?',
+  },
+];
+
+export const mockConversations: Conversation[] = [
+  {
+    id: 'c1',
+    guestName: 'James Whitfield',
+    status: 'open',
+    channel: 'booking',
+    lastMessage: 'Happy to pay any applicable fee.',
+    lastMessageTime: '2026-03-19T08:30:00Z',
+    unreadCount: 2,
+    messages: [
+      { id: 'cm1', sender: 'guest', senderName: 'James Whitfield', content: 'Hi, I\'m arriving at 10am and was wondering if an early check-in would be possible.', timestamp: '2026-03-19T08:30:00Z' },
+      { id: 'cm2', sender: 'staff', senderName: 'Maria S.', content: 'Hello Mr. Whitfield! Let me check availability for you right away.', timestamp: '2026-03-19T08:45:00Z' },
+    ],
+  },
+  {
+    id: 'c2',
+    guestName: 'Sophie Leclerc',
+    status: 'open',
+    channel: 'email',
+    lastMessage: 'I\'d like to speak with a manager.',
+    lastMessageTime: '2026-03-19T07:15:00Z',
+    unreadCount: 1,
+    messages: [
+      { id: 'cm3', sender: 'guest', senderName: 'Sophie Leclerc', content: 'I\'m very disappointed. The guests in room 412 were extremely loud until 2am.', timestamp: '2026-03-19T07:15:00Z' },
+    ],
+  },
+  {
+    id: 'c3',
+    guestName: 'Carlos Rivera',
+    status: 'resolved',
+    channel: 'whatsapp',
+    lastMessage: 'Thank you so much! Looking forward to it.',
+    lastMessageTime: '2026-03-19T10:00:00Z',
+    unreadCount: 0,
+    messages: [
+      { id: 'cm4', sender: 'guest', senderName: 'Carlos Rivera', content: 'Can I book a table for 2 tonight at 8pm? It\'s our anniversary!', timestamp: '2026-03-19T09:45:00Z' },
+      { id: 'cm5', sender: 'ai', senderName: 'AI Assistant', content: 'Congratulations! I\'ve reserved a window table for 2 at 8pm.', timestamp: '2026-03-19T09:50:00Z' },
+      { id: 'cm6', sender: 'guest', senderName: 'Carlos Rivera', content: 'Thank you so much! Looking forward to it.', timestamp: '2026-03-19T10:00:00Z' },
+    ],
+  },
+];
+
+export const mockTasks: Task[] = [
+  {
+    id: 't1',
+    title: 'Deep clean Room 214',
+    description: 'Guest checked out this morning. Full turnover required before 2pm.',
+    priority: 'high',
+    status: 'in_progress',
+    category: 'housekeeping',
+    assignedTo: 'Rosa M.',
+    roomNumber: '214',
+    dueTime: '14:00',
+    createdAt: '2026-03-19T09:00:00Z',
+  },
+  {
+    id: 't2',
+    title: 'Fix AC in Room 308',
+    description: 'Guest reported AC not cooling properly. HVAC tech needed.',
+    priority: 'urgent',
+    status: 'todo',
+    category: 'maintenance',
+    assignedTo: 'Tom K.',
+    roomNumber: '308',
+    dueTime: '11:00',
+    createdAt: '2026-03-19T08:00:00Z',
+  },
+  {
+    id: 't3',
+    title: 'Restock mini-bar in suite 501',
+    description: 'Guest noted missing items. Restock full inventory.',
+    priority: 'medium',
+    status: 'todo',
+    category: 'housekeeping',
+    assignedTo: 'Carmen L.',
+    roomNumber: '501',
+    createdAt: '2026-03-19T07:30:00Z',
+  },
+  {
+    id: 't4',
+    title: 'Prepare welcome amenity – VIP arrival',
+    description: 'Mr. Henderson (Loyalty Platinum) checks in at 3pm. Champagne + fruit basket in room.',
+    priority: 'high',
+    status: 'todo',
+    category: 'concierge',
+    assignedTo: 'Ana P.',
+    roomNumber: '612',
+    dueTime: '14:30',
+    createdAt: '2026-03-19T06:00:00Z',
+  },
+  {
+    id: 't5',
+    title: 'Pool towel restock',
+    description: 'Pool area running low on towels. Bring 50 from laundry.',
+    priority: 'low',
+    status: 'done',
+    category: 'housekeeping',
+    assignedTo: 'Miguel S.',
+    createdAt: '2026-03-19T08:00:00Z',
+  },
+  {
+    id: 't6',
+    title: 'Fix leaking faucet in Room 119',
+    description: 'Reported via maintenance app. Plumber required.',
+    priority: 'medium',
+    status: 'in_progress',
+    category: 'maintenance',
+    assignedTo: 'Tom K.',
+    roomNumber: '119',
+    createdAt: '2026-03-18T16:00:00Z',
+  },
+];
+
+export const mockKPIs: KPI[] = [
+  { id: 'k1', label: 'Occupancy Rate', value: '87%', change: 4.2, changeLabel: 'vs last week', trend: 'up' },
+  { id: 'k2', label: 'Avg Daily Rate', value: '$312', change: 8.5, changeLabel: 'vs last week', trend: 'up' },
+  { id: 'k3', label: 'RevPAR', value: '$271', change: 11.2, changeLabel: 'vs last week', trend: 'up' },
+  { id: 'k4', label: 'Guest Satisfaction', value: '4.7/5', change: 0.1, changeLabel: 'vs last month', trend: 'up' },
+  { id: 'k5', label: 'Response Time', value: '18 min', change: -12.0, changeLabel: 'vs last week', trend: 'down' },
+  { id: 'k6', label: 'Open Complaints', value: '3', change: -2, changeLabel: 'vs yesterday', trend: 'down' },
+];
+
+export const mockReviews: Review[] = [
+  { id: 'r1', guestName: 'Akira Tanaka', platform: 'TripAdvisor', rating: 4, comment: 'Wonderful stay! Room was spotless, staff incredibly helpful. WiFi was a bit slow but everything else was perfect.', date: '2026-03-18', sentiment: 'positive', responded: false },
+  { id: 'r2', guestName: 'Emma Wilson', platform: 'Google', rating: 5, comment: 'Best hotel in Miami! The rooftop bar is absolutely stunning and the breakfast buffet had something for everyone.', date: '2026-03-17', sentiment: 'positive', responded: true },
+  { id: 'r3', guestName: 'David Park', platform: 'Booking.com', rating: 2, comment: 'Disappointed with room cleanliness and slow service at check-in. Expected more for the price.', date: '2026-03-16', sentiment: 'negative', responded: false },
+  { id: 'r4', guestName: 'Lucia Ferraro', platform: 'Expedia', rating: 4, comment: 'Great location and lovely pool. The room was comfortable but street noise woke us early.', date: '2026-03-15', sentiment: 'neutral', responded: true },
+];
+
+export const mockCompetitors: Competitor[] = [
+  { id: 'comp1', name: 'The Grand Horizon (You)', stars: 4, avgRate: 312, occupancy: 87, reviewScore: 4.7 },
+  { id: 'comp2', name: 'Ocean View Suites', stars: 4, avgRate: 298, occupancy: 82, reviewScore: 4.5 },
+  { id: 'comp3', name: 'Palmetto Resort', stars: 5, avgRate: 445, occupancy: 79, reviewScore: 4.8 },
+  { id: 'comp4', name: 'Bay Breeze Hotel', stars: 3, avgRate: 210, occupancy: 91, reviewScore: 4.2 },
+  { id: 'comp5', name: 'Marina Grande', stars: 4, avgRate: 325, occupancy: 85, reviewScore: 4.6 },
+];
+
+export const mockReservations: Reservation[] = [
+  { id: 'res1', guestName: 'James Whitfield', guestEmail: 'j.whitfield@email.com', roomNumber: '305', roomType: 'Deluxe King', checkIn: '2026-03-20', checkOut: '2026-03-23', nights: 3, totalAmount: 936, status: 'confirmed', source: 'Booking.com' },
+  { id: 'res2', guestName: 'Sophie Leclerc', guestEmail: 'sophie.l@mail.fr', roomNumber: '411', roomType: 'Superior Twin', checkIn: '2026-03-18', checkOut: '2026-03-21', nights: 3, totalAmount: 756, status: 'checked_in', source: 'Direct' },
+  { id: 'res3', guestName: 'Carlos Rivera', guestEmail: 'crivera@gmail.com', roomNumber: '208', roomType: 'Classic Double', checkIn: '2026-03-19', checkOut: '2026-03-21', nights: 2, totalAmount: 498, status: 'checked_in', source: 'Expedia', specialRequests: 'Anniversary — flowers in room' },
+  { id: 'res4', guestName: 'Michael Henderson', guestEmail: 'mhenderson@corp.com', roomNumber: '612', roomType: 'Presidential Suite', checkIn: '2026-03-19', checkOut: '2026-03-22', nights: 3, totalAmount: 4500, status: 'confirmed', source: 'Direct', specialRequests: 'Platinum loyalty member — champagne on arrival' },
+  { id: 'res5', guestName: 'Yuki Yamamoto', guestEmail: 'yuki@example.jp', roomNumber: '115', roomType: 'Classic King', checkIn: '2026-03-17', checkOut: '2026-03-19', nights: 2, totalAmount: 490, status: 'checked_out', source: 'Booking.com' },
+  { id: 'res6', guestName: 'Andrea Costa', guestEmail: 'a.costa@hotmail.it', roomNumber: '320', roomType: 'Sea View King', checkIn: '2026-03-22', checkOut: '2026-03-25', nights: 3, totalAmount: 1080, status: 'confirmed', source: 'TripAdvisor' },
+];
