@@ -6,6 +6,7 @@ import { Operations } from './pages/Operations';
 import { Intelligence } from './pages/Intelligence';
 import { Reservations } from './pages/Reservations';
 import { Settings } from './pages/Settings';
+import { CallCenter } from './pages/CallCenter';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="operations" element={<Operations />} />
           <Route path="intelligence" element={<Intelligence />} />
           <Route path="reservations" element={<Reservations />} />
+          <Route path="call-center" element={<CallCenter />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

@@ -10,6 +10,7 @@ import {
   Hotel,
   ChevronLeft,
   ChevronRight,
+  Phone,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
 
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { id: 'operations', label: 'Operations', path: '/operations', icon: <ClipboardList size={20} />, badge: 2 },
   { id: 'intelligence', label: 'Intelligence', path: '/intelligence', icon: <BarChart3 size={20} /> },
   { id: 'reservations', label: 'Reservations', path: '/reservations', icon: <CalendarDays size={20} /> },
+  { id: 'call-center', label: 'Call Center', path: '/call-center', icon: <Phone size={20} /> },
   { id: 'settings', label: 'Settings', path: '/settings', icon: <Settings size={20} /> },
 ];
 
