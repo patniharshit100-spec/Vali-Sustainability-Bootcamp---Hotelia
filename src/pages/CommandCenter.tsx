@@ -10,8 +10,12 @@ import {
   Pencil,
   UserPlus,
   AlertTriangle,
+  Phone,
+  PhoneMissed,
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { InboxSlidePanel } from '../components/inbox/InboxSlidePanel';
+import { useCallStore } from '../stores/callStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -267,6 +271,8 @@ export const CommandCenter: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [replyItem, setReplyItem] = useState<InboxItem | null>(null);
   const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+  const { callLogs, activeCall } = useCallStore();
+  const missedCalls = callLogs.filter((l) => l.status === 'missed').length;
 
   const handleApprove = (id: string) => {
     setApprovedIds((prev) => new Set(prev).add(id));
@@ -336,6 +342,40 @@ export const CommandCenter: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* ── SECTION 1.5: Call Center Quick Access ── */}
+      <NavLink
+        to="/call-center"
+        className="block bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${activeCall ? 'bg-green-100' : 'bg-slate-100'}`}>
+              <Phone size={18} className={activeCall ? 'text-green-600' : 'text-slate-500'} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">
+                {activeCall ? `On call · ${activeCall.callerName}` : 'AI Call Center'}
+              </p>
+              <p className="text-xs text-slate-400">
+                {activeCall ? 'Active call in progress — click to manage' : `${callLogs.length} calls logged · ${missedCalls} missed`}
+              </p>
+            </div>
+          </div>
+          {missedCalls > 0 && !activeCall && (
+            <div className="flex items-center gap-1.5 bg-red-50 text-red-600 px-2.5 py-1.5 rounded-lg">
+              <PhoneMissed size={13} />
+              <span className="text-xs font-semibold">{missedCalls} missed</span>
+            </div>
+          )}
+          {activeCall && (
+            <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-2.5 py-1.5 rounded-lg animate-pulse">
+              <Phone size={13} />
+              <span className="text-xs font-semibold">Live</span>
+            </div>
+          )}
+        </div>
+      </NavLink>
 
       {/* ── SECTION 2: Action Inbox ── */}
       <div>
