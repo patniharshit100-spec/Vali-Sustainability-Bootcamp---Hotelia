@@ -99,3 +99,10 @@ export const useCallStore = create<CallStore>((set, get) => ({
   addCallLog: (log) =>
     set((state) => ({ callLogs: [log, ...state.callLogs] })),
 }));
+
+// ── Selectors ─────────────────────────────────────────────────────────────────
+
+const TODAY = new Date().toISOString().slice(0, 10);
+
+export const selectCallsToday = (state: CallStore) =>
+  state.callLogs.filter((l) => l.startedAt.startsWith(TODAY)).length;
