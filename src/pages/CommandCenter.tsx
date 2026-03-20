@@ -9,10 +9,9 @@ import {
   Check,
   Pencil,
   UserPlus,
-  X,
-  Send,
   AlertTriangle,
 } from 'lucide-react';
+import { InboxSlidePanel } from '../components/inbox/InboxSlidePanel';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -174,110 +173,6 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   );
 }
 
-// ─── Reply slide panel ────────────────────────────────────────────────────────
-
-function ReplyPanel({
-  item,
-  onClose,
-}: {
-  item: InboxItem | null;
-  onClose: () => void;
-}) {
-  const [text, setText] = useState('');
-
-  useEffect(() => {
-    if (item) setText(item.aiDraftedReply ?? '');
-  }, [item]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  const isOpen = item !== null;
-
-  return (
-    <>
-      {isOpen && <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />}
-      <div
-        className={`fixed top-0 right-0 h-full bg-white shadow-2xl z-50 flex flex-col w-[520px] transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200">
-          <div className="flex-1 min-w-0 pr-4">
-            <p className="text-xs text-slate-500 mb-0.5">
-              {item && (
-                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium mr-2 ${CHANNEL_COLORS[item.channel]}`}>
-                  {CHANNEL_ICONS[item.channel]}
-                  {item.channelLabel}
-                </span>
-              )}
-              {item?.guestName} · {item?.timestamp}
-            </p>
-            <h2 className="text-sm font-semibold text-slate-800 leading-snug">{item?.subject}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Original message */}
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-          <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Guest Message</p>
-          <p className="text-sm text-slate-600 leading-relaxed">{item?.preview}</p>
-        </div>
-
-        {/* Reply composer */}
-        <div className="flex-1 flex flex-col px-6 py-4 overflow-hidden">
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs font-semibold text-slate-700">Your Reply</p>
-            {item?.aiStatus === 'ai-ready' && (
-              <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">
-                <Sparkles size={11} />
-                AI draft loaded
-              </span>
-            )}
-          </div>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="flex-1 w-full resize-none text-sm text-slate-700 border border-slate-200 rounded-xl p-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[200px]"
-            placeholder="Write your reply..."
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              Save Draft
-            </button>
-            <button
-              disabled={!text.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={14} />
-              Send Reply
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ─── Inbox card ────────────────────────────────────────────────────────────────
 
 function InboxCard({
@@ -292,7 +187,10 @@ function InboxCard({
   const aiBadge = AI_BADGE[item.aiStatus];
 
   return (
-    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-sm transition-shadow">
+    <div
+      onClick={() => onEdit(item)}
+      className="flex bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:border-slate-300 transition-all cursor-pointer"
+    >
       {/* Urgency bar */}
       <div className={`w-1 flex-shrink-0 ${URGENCY_BAR[item.urgency]}`} />
 
@@ -327,7 +225,7 @@ function InboxCard({
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {item.aiStatus === 'ai-ready' && (
             <button
-              onClick={() => onApprove(item.id)}
+              onClick={(e) => { e.stopPropagation(); onApprove(item.id); }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition-colors"
             >
               <Check size={12} />
@@ -336,18 +234,24 @@ function InboxCard({
           )}
           {item.aiStatus !== 'auto-resolved' && (
             <button
-              onClick={() => onEdit(item)}
+              onClick={(e) => { e.stopPropagation(); onEdit(item); }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
             >
               <Pencil size={12} />
               Edit & Reply
             </button>
           )}
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-lg transition-colors">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-lg transition-colors"
+          >
             <UserPlus size={12} />
             Assign
           </button>
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-500 text-xs font-semibold rounded-lg transition-colors">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-500 text-xs font-semibold rounded-lg transition-colors"
+          >
             Dismiss
           </button>
         </div>
@@ -367,6 +271,12 @@ export const CommandCenter: React.FC = () => {
   const handleApprove = (id: string) => {
     setApprovedIds((prev) => new Set(prev).add(id));
     setToast('AI reply sent successfully!');
+  };
+
+  const handlePanelSend = (itemId: string, _text: string, channel: string) => {
+    setApprovedIds((prev) => new Set(prev).add(itemId));
+    setReplyItem(null);
+    setToast(`Reply sent via ${channel}!`);
   };
 
   const visibleItems = INBOX_ITEMS.filter(
@@ -485,7 +395,11 @@ export const CommandCenter: React.FC = () => {
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
 
       {/* Reply slide panel */}
-      <ReplyPanel item={replyItem} onClose={() => setReplyItem(null)} />
+      <InboxSlidePanel
+        item={replyItem}
+        onClose={() => setReplyItem(null)}
+        onSend={handlePanelSend}
+      />
     </div>
   );
 };
