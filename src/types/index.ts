@@ -63,6 +63,7 @@ export type Conversation = {
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type TaskCategory = 'housekeeping' | 'maintenance' | 'front_desk' | 'food_beverage' | 'concierge';
+export type TaskSource = 'manual' | 'scheduled' | 'guest_request' | 'auto_ai';
 
 export type Task = {
   id: string;
@@ -73,8 +74,13 @@ export type Task = {
   category: TaskCategory;
   assignedTo: string;
   roomNumber?: string;
-  dueTime?: string;
+  dueTime?: string;           // display label, e.g. "14:00"
+  dueDateTime?: string;       // ISO string for overdue calculation
   createdAt: string;
+  completedAt?: string;       // ISO string, used for "completed today" stat
+  source?: TaskSource;
+  sourceConversationId?: string;  // link to conversation in Conversations page
+  isAutoCreated?: boolean;        // true = created by AI from guest message
 };
 
 // Intelligence / KPIs
