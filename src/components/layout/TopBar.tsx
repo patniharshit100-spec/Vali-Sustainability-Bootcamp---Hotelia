@@ -3,6 +3,7 @@ import { Bell, Search, ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { Avatar } from '../common/Avatar';
+import { ConnectionStatus } from '../common/ConnectionStatus';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Command Center', subtitle: 'Today\'s overview & priority inbox' },
@@ -47,6 +48,9 @@ export const TopBar: React.FC = () => {
           <div className="h-2 w-2 rounded-full bg-green-500" />
           <span className="text-xs font-medium text-slate-600">{hotel.name}</span>
         </div>
+
+        {/* Connection status */}
+        <ConnectionStatus />
 
         {/* Notifications */}
         <button className="relative p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">

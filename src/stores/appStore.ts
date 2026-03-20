@@ -6,6 +6,8 @@ interface AppState {
   hotel: Hotel;
   user: User;
   sidebarCollapsed: boolean;
+  loading: boolean;
+  error: string | null;
   toggleSidebar: () => void;
   notificationCount: number;
 }
@@ -14,6 +16,8 @@ export const useAppStore = create<AppState>((set) => ({
   hotel: mockHotel,
   user: mockUser,
   sidebarCollapsed: false,
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  loading: false,
+  error: null,
   notificationCount: 5,
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 }));
