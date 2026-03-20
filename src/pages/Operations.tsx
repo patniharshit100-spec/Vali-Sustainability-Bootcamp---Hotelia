@@ -6,8 +6,10 @@ import {
   Clock,
   ListTodo,
   ChevronRight,
+  Database,
 } from 'lucide-react';
 import { useTasksStore } from '../stores/tasksStore';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { TaskList } from '../components/operations/TaskList';
 import { TaskDetail } from '../components/operations/TaskDetail';
 import { NewTaskModal } from '../components/operations/NewTaskModal';
@@ -40,7 +42,9 @@ function isOverdue(task: Task): boolean {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const Operations: React.FC = () => {
-  const { tasks, selectedTaskId, selectTask, addTask } = useTasksStore();
+  const { tasks, loading, selectedTaskId, selectTask, addTask } = useTasksStore();
+  const isDemo = !isSupabaseConfigured();
+
   const [panelOpen, setPanelOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -49,10 +53,10 @@ export const Operations: React.FC = () => {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const open        = tasks.filter((t) => t.status !== 'done').length;
-    const overdue     = tasks.filter(isOverdue).length;
-    const doneToday   = tasks.filter((t) => t.status === 'done' && t.completedAt && isToday(t.completedAt)).length;
-    const inProgress  = tasks.filter((t) => t.status === 'in_progress').length;
+    const open       = tasks.filter((t) => t.status !== 'done').length;
+    const overdue    = tasks.filter(isOverdue).length;
+    const doneToday  = tasks.filter((t) => t.status === 'done' && t.completedAt && isToday(t.completedAt)).length;
+    const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
     return { open, overdue, doneToday, inProgress };
   }, [tasks]);
 
@@ -62,18 +66,31 @@ export const Operations: React.FC = () => {
   };
 
   const handleAddTask = (task: Task) => {
-    addTask(task);
+    void addTask(task);
   };
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
+      {/* ── Demo banner ──────────────────────────────────────────────────── */}
+      {isDemo && (
+        <div className="flex items-center gap-3 mx-6 mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 flex-shrink-0">
+          <Database size={16} className="flex-shrink-0 text-amber-600" />
+          <p className="text-sm font-medium">
+            Demo mode — showing local data. Add Supabase env vars to persist changes.
+          </p>
+        </div>
+      )}
+
       {/* ── TOP BAR ──────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 bg-white border-b border-slate-200">
+      <div className="flex-shrink-0 bg-white border-b border-slate-200 mt-3">
         {/* Title row */}
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-base font-bold text-slate-800">Operations</h2>
             <span className="text-xs text-slate-400">Today · Kanban view</span>
+            {loading && (
+              <span className="text-xs text-slate-400 animate-pulse">Loading…</span>
+            )}
           </div>
           <button
             onClick={() => setModalOpen(true)}
@@ -85,61 +102,75 @@ export const Operations: React.FC = () => {
         </div>
 
         {/* ── Stats row ────────────────────────────────────────────────── */}
-        <div className="flex items-stretch gap-0 border-t border-slate-100 divide-x divide-slate-100">
-          {/* Open */}
-          <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
-            <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <ListTodo size={16} className="text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-slate-800 leading-none">{stats.open}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Open tasks</p>
-            </div>
+        {loading ? (
+          <div className="flex items-stretch gap-0 border-t border-slate-100 divide-x divide-slate-100">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-6 py-3 flex-1 animate-pulse">
+                <div className="h-8 w-8 bg-slate-100 rounded-lg flex-shrink-0" />
+                <div className="space-y-1.5">
+                  <div className="h-5 w-8 bg-slate-100 rounded" />
+                  <div className="h-3 w-16 bg-slate-100 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="flex items-stretch gap-0 border-t border-slate-100 divide-x divide-slate-100">
+            {/* Open */}
+            <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
+              <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <ListTodo size={16} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-slate-800 leading-none">{stats.open}</p>
+                <p className="text-xs text-slate-500 mt-0.5">Open tasks</p>
+              </div>
+            </div>
 
-          {/* Overdue */}
-          <div className={`flex items-center gap-3 px-6 py-3 flex-1 min-w-0 ${stats.overdue > 0 ? 'bg-red-50/60' : ''}`}>
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.overdue > 0 ? 'bg-red-100' : 'bg-slate-100'}`}>
-              <AlertTriangle size={16} className={stats.overdue > 0 ? 'text-red-600' : 'text-slate-400'} />
+            {/* Overdue */}
+            <div className={`flex items-center gap-3 px-6 py-3 flex-1 min-w-0 ${stats.overdue > 0 ? 'bg-red-50/60' : ''}`}>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.overdue > 0 ? 'bg-red-100' : 'bg-slate-100'}`}>
+                <AlertTriangle size={16} className={stats.overdue > 0 ? 'text-red-600' : 'text-slate-400'} />
+              </div>
+              <div>
+                <p className={`text-xl font-bold leading-none ${stats.overdue > 0 ? 'text-red-600' : 'text-slate-800'}`}>
+                  {stats.overdue}
+                </p>
+                <p className={`text-xs mt-0.5 ${stats.overdue > 0 ? 'text-red-500 font-semibold' : 'text-slate-500'}`}>
+                  Overdue
+                </p>
+              </div>
+              {stats.overdue > 0 && (
+                <span className="ml-2 hidden sm:flex items-center gap-1 text-xs text-red-600 font-medium">
+                  <ChevronRight size={12} />
+                  Needs attention
+                </span>
+              )}
             </div>
-            <div>
-              <p className={`text-xl font-bold leading-none ${stats.overdue > 0 ? 'text-red-600' : 'text-slate-800'}`}>
-                {stats.overdue}
-              </p>
-              <p className={`text-xs mt-0.5 ${stats.overdue > 0 ? 'text-red-500 font-semibold' : 'text-slate-500'}`}>
-                Overdue
-              </p>
-            </div>
-            {stats.overdue > 0 && (
-              <span className="ml-2 hidden sm:flex items-center gap-1 text-xs text-red-600 font-medium">
-                <ChevronRight size={12} />
-                Needs attention
-              </span>
-            )}
-          </div>
 
-          {/* In Progress */}
-          <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
-            <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Clock size={16} className="text-amber-600" />
+            {/* In Progress */}
+            <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
+              <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock size={16} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-slate-800 leading-none">{stats.inProgress}</p>
+                <p className="text-xs text-slate-500 mt-0.5">In progress</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xl font-bold text-slate-800 leading-none">{stats.inProgress}</p>
-              <p className="text-xs text-slate-500 mt-0.5">In progress</p>
-            </div>
-          </div>
 
-          {/* Completed today */}
-          <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
-            <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 size={16} className="text-green-600" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-slate-800 leading-none">{stats.doneToday}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Completed today</p>
+            {/* Completed today */}
+            <div className="flex items-center gap-3 px-6 py-3 flex-1 min-w-0">
+              <div className="h-8 w-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 size={16} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-slate-800 leading-none">{stats.doneToday}</p>
+                <p className="text-xs text-slate-500 mt-0.5">Completed today</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Category filter chips ─────────────────────────────────────── */}
         <div className="flex items-center gap-1.5 px-5 py-3 border-t border-slate-100 overflow-x-auto">

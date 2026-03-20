@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
+  TrendingDown,
   Sparkles,
   Mail,
   MessageCircle,
@@ -11,11 +13,14 @@ import {
   UserPlus,
   AlertTriangle,
   Phone,
-  PhoneMissed,
+  Database,
 } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
 import { InboxSlidePanel } from '../components/inbox/InboxSlidePanel';
-import { useCallStore } from '../stores/callStore';
+import { useCallStore, selectCallsToday } from '../stores/callStore';
+import { useInboxStore } from '../stores/inboxStore';
+import { useIntelligenceStore } from '../stores/intelligenceStore';
+import { isSupabaseConfigured } from '../lib/supabase';
+import type { CallRecord } from '../types/call';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -105,19 +110,19 @@ const INBOX_ITEMS: InboxItem[] = [
 // ─── KPI data ─────────────────────────────────────────────────────────────────
 
 const KPIS = [
-  { id: 'occ', label: 'Occupancy Rate', value: '78%', trend: '+5%', trendUp: true },
-  { id: 'rev', label: 'Avg Revenue / Room', value: 'EUR 142', trend: '+3%', trendUp: true },
-  { id: 'score', label: 'Review Score', value: '4.3 / 5', trend: '+0.2', trendUp: true },
-  { id: 'actions', label: 'Pending Actions', value: 12, trend: null, trendUp: false },
+  { id: 'occ',     label: 'Occupancy Rate',     value: '78%',     trend: '+5%',  trendUp: true },
+  { id: 'rev',     label: 'Avg Revenue / Room',  value: 'EUR 142', trend: '+3%',  trendUp: true },
+  { id: 'score',   label: 'Review Score',        value: '4.3 / 5', trend: '+0.2', trendUp: true },
+  { id: 'actions', label: 'Pending Actions',     value: 12,        trend: null,   trendUp: false },
 ];
 
 // ─── Filter tabs ──────────────────────────────────────────────────────────────
 
 const TABS: { id: FilterTab; label: string; count: number }[] = [
-  { id: 'all', label: 'All', count: 5 },
-  { id: 'urgent', label: 'Urgent', count: 1 },
-  { id: 'needs-reply', label: 'Needs Reply', count: 2 },
-  { id: 'reviews', label: 'Reviews', count: 1 },
+  { id: 'all',           label: 'All',           count: 5 },
+  { id: 'urgent',        label: 'Urgent',        count: 1 },
+  { id: 'needs-reply',   label: 'Needs Reply',   count: 2 },
+  { id: 'reviews',       label: 'Reviews',       count: 1 },
   { id: 'auto-resolved', label: 'Auto-Resolved', count: 1 },
 ];
 
@@ -133,30 +138,30 @@ function matchesTab(item: InboxItem, tab: FilterTab): boolean {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const URGENCY_BAR: Record<UrgencyLevel, string> = {
-  urgent: 'bg-red-500',
+  urgent:  'bg-red-500',
   pending: 'bg-amber-400',
-  info: 'bg-blue-500',
-  review: 'bg-amber-400',
+  info:    'bg-blue-500',
+  review:  'bg-amber-400',
 };
 
 const CHANNEL_ICONS: Record<string, React.ReactNode> = {
-  email: <Mail size={13} />,
-  booking: <Globe size={13} />,
-  whatsapp: <MessageCircle size={13} />,
+  email:       <Mail size={13} />,
+  booking:     <Globe size={13} />,
+  whatsapp:    <MessageCircle size={13} />,
   tripadvisor: <Star size={13} />,
 };
 
 const CHANNEL_COLORS: Record<string, string> = {
-  email: 'bg-slate-100 text-slate-600',
-  booking: 'bg-blue-100 text-blue-700',
-  whatsapp: 'bg-green-100 text-green-700',
+  email:       'bg-slate-100 text-slate-600',
+  booking:     'bg-blue-100 text-blue-700',
+  whatsapp:    'bg-green-100 text-green-700',
   tripadvisor: 'bg-emerald-100 text-emerald-700',
 };
 
 const AI_BADGE: Record<AIStatus, { label: string; className: string }> = {
-  'ai-ready': { label: 'AI Reply Ready', className: 'bg-blue-100 text-blue-700' },
-  'action-required': { label: 'Action Required', className: 'bg-red-100 text-red-600' },
-  'auto-resolved': { label: 'Auto-Resolved', className: 'bg-green-100 text-green-700' },
+  'ai-ready':       { label: 'AI Reply Ready',  className: 'bg-blue-100 text-blue-700' },
+  'action-required':{ label: 'Action Required', className: 'bg-red-100 text-red-600' },
+  'auto-resolved':  { label: 'Auto-Resolved',   className: 'bg-green-100 text-green-700' },
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -210,9 +215,7 @@ function InboxCard({
                 {item.channelLabel}
               </span>
               <span className="text-xs text-slate-400">{item.timestamp}</span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ml-auto ${aiBadge.className}`}
-              >
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ml-auto ${aiBadge.className}`}>
                 {aiBadge.label}
               </span>
             </div>
@@ -264,18 +267,128 @@ function InboxCard({
   );
 }
 
+// ─── Call inbox card ──────────────────────────────────────────────────────────
+// Visually matches InboxCard: same white card, border, padding, font sizes.
+// Purple left bar and badge distinguish it as a phone call.
+
+function formatCallAge(date: Date): string {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1)  return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function CallInboxCard({
+  call,
+  onView,
+}: {
+  call: CallRecord;
+  onView: () => void;
+}) {
+  const callerLabel =
+    call.direction === 'inbound'
+      ? (call.callerName ?? call.callerPhone ?? 'Unknown Caller')
+      : (call.vendorName ?? call.vendorPhone ?? 'Vendor');
+
+  const subject =
+    call.status === 'missed'
+      ? `Missed call — ${callerLabel}`
+      : (call.summary ?? `Call with ${callerLabel}`);
+
+  // First transcript line makes a more useful preview than a static string
+  const preview =
+    call.transcript[0]?.content ??
+    call.summary ??
+    'No transcript available.';
+
+  const statusBadge =
+    call.status === 'missed'
+      ? { label: 'Missed', className: 'bg-red-100 text-red-600' }
+      : { label: 'Needs Review', className: 'bg-purple-100 text-purple-700' };
+
+  return (
+    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:border-slate-300 transition-all">
+      {/* Purple urgency bar — matches the 4px bar on InboxCard */}
+      <div className="w-1 flex-shrink-0 bg-purple-500" />
+
+      <div className="flex-1 min-w-0 p-4">
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Channel + timestamp row */}
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                <Phone size={13} />
+                Call
+              </span>
+              <span className="text-xs text-slate-400">{formatCallAge(call.startTime)}</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ml-auto ${statusBadge.className}`}>
+                {statusBadge.label}
+              </span>
+            </div>
+
+            {/* Subject */}
+            <p className="text-sm font-semibold text-slate-800 leading-snug mb-1">{subject}</p>
+
+            {/* Preview */}
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{preview}</p>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={onView}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
+          >
+            <Phone size={12} />
+            View Summary
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const CommandCenter: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const [toast, setToast] = useState<string | null>(null);
-  const [replyItem, setReplyItem] = useState<InboxItem | null>(null);
-  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
-  const { callLogs, activeCall } = useCallStore();
-  const missedCalls = callLogs.filter((l) => l.status === 'missed').length;
+  const navigate = useNavigate();
 
-  const handleApprove = (id: string) => {
+  // ── Supabase stores ──────────────────────────────────────────────────────
+  const inboxLoading     = useInboxStore((s) => s.loading);
+  const approveAIReply   = useInboxStore((s) => s.approveAIReply);
+  const liveKpis         = useIntelligenceStore((s) => s.kpis);
+  const kpisLoading      = useIntelligenceStore((s) => s.loading);
+  const isDemo           = !isSupabaseConfigured();
+
+  // ── Call Center live data ────────────────────────────────────────────────
+  const activeCall    = useCallStore((s) => s.activeCall);
+  const callHistory   = useCallStore((s) => s.callHistory);
+  const callsToday    = useCallStore(selectCallsToday);
+
+  // Calls that ended without a linked task — surface in inbox
+  const unresolvedCalls = callHistory.filter(
+    (c) => (c.status === 'ended' || c.status === 'missed') && !c.linkedTaskId,
+  );
+
+  // Last recorded sentiment for the trend badge on the KPI card
+  const lastSentiment = callHistory
+    .filter((c) => c.sentiment !== undefined)
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0]
+    ?.sentiment;
+
+  // ── Existing page state ──────────────────────────────────────────────────
+  const [activeTab,   setActiveTab]   = useState<FilterTab>('all');
+  const [toast,       setToast]       = useState<string | null>(null);
+  const [replyItem,   setReplyItem]   = useState<InboxItem | null>(null);
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
+
+  const handleApprove = async (id: string) => {
     setApprovedIds((prev) => new Set(prev).add(id));
+    await approveAIReply(id);
     setToast('AI reply sent successfully!');
   };
 
@@ -289,8 +402,61 @@ export const CommandCenter: React.FC = () => {
     (item) => matchesTab(item, activeTab) && !approvedIds.has(item.id),
   );
 
+  // ── Call Center KPI card content ─────────────────────────────────────────
+
+  const callsTodayCount = callsToday.length;
+
+  // Sentiment trend badge — matches the green pill style used on other KPI cards
+  const sentimentBadge = (() => {
+    if (!lastSentiment) {
+      return (
+        <div className="flex items-center gap-1 bg-slate-100 text-slate-500 px-2 py-1 rounded-lg flex-shrink-0">
+          <span className="text-xs font-semibold">— None yet</span>
+        </div>
+      );
+    }
+    if (lastSentiment === 'positive') {
+      return (
+        <div className="flex items-center gap-1 bg-green-50 text-green-600 px-2 py-1 rounded-lg flex-shrink-0">
+          <TrendingUp size={13} />
+          <span className="text-xs font-semibold">Positive</span>
+        </div>
+      );
+    }
+    if (lastSentiment === 'negative') {
+      return (
+        <div className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-1 rounded-lg flex-shrink-0">
+          <TrendingDown size={13} />
+          <span className="text-xs font-semibold">Negative</span>
+        </div>
+      );
+    }
+    // neutral
+    return (
+      <div className="flex items-center gap-1 bg-slate-100 text-slate-500 px-2 py-1 rounded-lg flex-shrink-0">
+        <span className="text-xs font-semibold">Neutral</span>
+      </div>
+    );
+  })();
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="h-full overflow-y-auto"><div className="p-6 space-y-6">
+      {/* Demo mode banner */}
+      {isDemo && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800">
+          <Database size={16} className="flex-shrink-0 text-amber-600" />
+          <p className="text-sm font-medium">
+            Demo mode — not connected to database. Add{' '}
+            <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">VITE_SUPABASE_URL</code>{' '}
+            and{' '}
+            <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">VITE_SUPABASE_ANON_KEY</code>{' '}
+            to your <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">.env</code> to connect.
+          </p>
+        </div>
+      )}
+
       {/* AI Greeting Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
         <div className="flex items-start gap-3">
@@ -310,72 +476,86 @@ export const CommandCenter: React.FC = () => {
       </div>
 
       {/* ── SECTION 1: KPI Bar ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {KPIS.map((kpi) => (
-          <div key={kpi.id} className="bg-white rounded-xl border border-slate-200 p-5">
-            <p className="text-xs text-slate-500 font-medium mb-2">{kpi.label}</p>
+      {/*
+        Grid: 2 cols on mobile, 3 on md, 5 on xl.
+        The 5th card (Call Center) is appended inside the same grid — identical
+        card style (bg-white rounded-xl border border-slate-200 p-5).
+      */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* KPI cards — live from intelligenceStore, skeleton while loading */}
+        {kpisLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
+                <div className="h-3 w-24 bg-slate-100 rounded mb-3" />
+                <div className="h-7 w-16 bg-slate-100 rounded" />
+              </div>
+            ))
+          : liveKpis.map((kpi) => (
+              <div key={kpi.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                <p className="text-xs text-slate-500 font-medium mb-2">{kpi.label}</p>
 
-            <div className="flex items-end justify-between gap-2">
-              <p className="text-2xl font-bold text-slate-800 leading-none">
-                {kpi.id === 'actions' ? (
-                  <span className="flex items-center gap-2">
-                    {kpi.value}
-                    {(kpi.value as number) > 5 && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                        <AlertTriangle size={11} />
-                        High
+                <div className="flex items-end justify-between gap-2">
+                  <p className="text-2xl font-bold text-slate-800 leading-none">
+                    {kpi.id === 'pending-actions' ? (
+                      <span className="flex items-center gap-2">
+                        {kpi.value}
+                        {parseInt(kpi.value, 10) > 5 && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                            <AlertTriangle size={11} />
+                            High
+                          </span>
+                        )}
                       </span>
+                    ) : (
+                      kpi.value
                     )}
-                  </span>
-                ) : (
-                  kpi.value
-                )}
-              </p>
+                  </p>
 
-              {kpi.trend && (
-                <div className="flex items-center gap-1 bg-green-50 text-green-600 px-2 py-1 rounded-lg flex-shrink-0">
-                  <TrendingUp size={13} />
-                  <span className="text-xs font-semibold">{kpi.trend}</span>
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 ${
+                    kpi.trend === 'up' ? 'bg-green-50 text-green-600' :
+                    kpi.trend === 'down' ? 'bg-red-50 text-red-500' :
+                    'bg-slate-100 text-slate-500'
+                  }`}>
+                    {kpi.trend === 'up' && <TrendingUp size={13} />}
+                    {kpi.trend === 'down' && <TrendingDown size={13} />}
+                    <span className="text-xs font-semibold">{kpi.changeLabel}</span>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+              </div>
+            ))
+        }
 
-      {/* ── SECTION 1.5: Call Center Quick Access ── */}
-      <NavLink
-        to="/call-center"
-        className="block bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${activeCall ? 'bg-green-100' : 'bg-slate-100'}`}>
-              <Phone size={18} className={activeCall ? 'text-green-600' : 'text-slate-500'} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">
-                {activeCall ? `On call · ${activeCall.callerName}` : 'AI Call Center'}
-              </p>
-              <p className="text-xs text-slate-400">
-                {activeCall ? 'Active call in progress — click to manage' : `${callLogs.length} calls logged · ${missedCalls} missed`}
-              </p>
-            </div>
+        {/* 5th card: Call Center — identical card shell, live data from callStore */}
+        <div
+          onClick={() => navigate('/call-center')}
+          className="bg-white rounded-xl border border-slate-200 p-5 cursor-pointer hover:shadow-md hover:border-slate-300 transition-all"
+        >
+          <p className="text-xs text-slate-500 font-medium mb-2">Call Center</p>
+
+          <div className="flex items-end justify-between gap-2">
+            <p className="text-2xl font-bold text-slate-800 leading-none">
+              {callsTodayCount} {callsTodayCount === 1 ? 'Call' : 'Calls'}
+            </p>
+            {sentimentBadge}
           </div>
-          {missedCalls > 0 && !activeCall && (
-            <div className="flex items-center gap-1.5 bg-red-50 text-red-600 px-2.5 py-1.5 rounded-lg">
-              <PhoneMissed size={13} />
-              <span className="text-xs font-semibold">{missedCalls} missed</span>
-            </div>
-          )}
-          {activeCall && (
-            <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-2.5 py-1.5 rounded-lg animate-pulse">
-              <Phone size={13} />
-              <span className="text-xs font-semibold">Live</span>
-            </div>
-          )}
+
+          {/* Active / Idle status indicator — sits where the trend row sits on other cards */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <span
+              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                activeCall ? 'bg-green-500' : 'bg-slate-300'
+              }`}
+            />
+            <span
+              className={`text-xs font-medium ${
+                activeCall ? 'text-green-600' : 'text-slate-400'
+              }`}
+            >
+              {activeCall ? 'Active' : 'Idle'}
+            </span>
+          </div>
         </div>
-      </NavLink>
+      </div>
 
       {/* ── SECTION 2: Action Inbox ── */}
       <div>
@@ -412,21 +592,47 @@ export const CommandCenter: React.FC = () => {
 
         {/* Items */}
         <div className="space-y-3">
-          {visibleItems.length === 0 ? (
+          {inboxLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex bg-white border border-slate-200 rounded-xl overflow-hidden animate-pulse">
+                <div className="w-1 bg-slate-100 flex-shrink-0" />
+                <div className="flex-1 p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <div className="h-4 w-20 bg-slate-100 rounded-full" />
+                    <div className="h-4 w-12 bg-slate-100 rounded-full" />
+                  </div>
+                  <div className="h-4 w-3/4 bg-slate-100 rounded" />
+                  <div className="h-3 w-full bg-slate-100 rounded" />
+                  <div className="h-3 w-2/3 bg-slate-100 rounded" />
+                </div>
+              </div>
+            ))
+          ) : visibleItems.length === 0 && unresolvedCalls.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 gap-2">
               <Check size={24} className="text-slate-300" />
               <p className="text-sm font-medium text-slate-500">All clear in this category</p>
               <p className="text-xs">No items to action here right now.</p>
             </div>
           ) : (
-            visibleItems.map((item) => (
-              <InboxCard
-                key={item.id}
-                item={item}
-                onApprove={handleApprove}
-                onEdit={setReplyItem}
-              />
-            ))
+            <>
+              {visibleItems.map((item) => (
+                <InboxCard
+                  key={item.id}
+                  item={item}
+                  onApprove={handleApprove}
+                  onEdit={setReplyItem}
+                />
+              ))}
+
+              {/* Call inbox items — only on the "All" tab, only when there are unresolved calls */}
+              {activeTab === 'all' && unresolvedCalls.map((call) => (
+                <CallInboxCard
+                  key={call.id}
+                  call={call}
+                  onView={() => navigate('/call-center')}
+                />
+              ))}
+            </>
           )}
         </div>
       </div>
