@@ -27,6 +27,7 @@ export type Message = {
 
 // Conversations
 export type ConversationStatus = 'open' | 'resolved' | 'pending';
+export type ConversationUrgency = 'urgent' | 'waiting' | 'resolved';
 
 export type ChatMessage = {
   id: string;
@@ -34,6 +35,8 @@ export type ChatMessage = {
   senderName: string;
   content: string;
   timestamp: string;
+  channel?: MessageSource;       // which channel this specific message arrived on
+  isAIGenerated?: boolean;       // true when AI auto-replied
 };
 
 export type Conversation = {
@@ -41,11 +44,19 @@ export type Conversation = {
   guestName: string;
   guestAvatar?: string;
   status: ConversationStatus;
-  channel: MessageSource;
+  urgency: ConversationUrgency;
+  channel: MessageSource;          // primary / most-recent channel
+  channels: MessageSource[];       // all channels used across this thread
   lastMessage: string;
   lastMessageTime: string;
   messages: ChatMessage[];
   unreadCount: number;
+  reservationId?: string;
+  checkIn?: string;
+  checkOut?: string;
+  roomType?: string;
+  roomNumber?: string;
+  aiSuggested?: string;
 };
 
 // Operations / Tasks

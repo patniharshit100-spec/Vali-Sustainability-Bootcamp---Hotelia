@@ -284,7 +284,7 @@ export const CommandCenter: React.FC = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="h-full overflow-y-auto"><div className="p-6 space-y-6">
       {/* AI Greeting Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
         <div className="flex items-start gap-3">
@@ -400,6 +400,6 @@ export const CommandCenter: React.FC = () => {
         onClose={() => setReplyItem(null)}
         onSend={handlePanelSend}
       />
-    </div>
+    </div></div>
   );
 };

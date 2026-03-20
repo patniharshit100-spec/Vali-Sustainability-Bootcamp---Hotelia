@@ -8,16 +8,24 @@ export const Conversations: React.FC = () => {
   const [selected, setSelected] = useState<Conversation | null>(null);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full overflow-hidden">
       <ConversationList selectedId={selected?.id ?? null} onSelect={setSelected} />
-      <div className="flex-1 overflow-hidden">
+
+      <div className="flex-1 min-w-0 overflow-hidden">
         {selected ? (
-          <ConversationThread conversation={selected} />
+          <ConversationThread
+            key={selected.id}
+            conversation={selected}
+          />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
-            <MessageSquare size={40} className="text-slate-200" />
-            <p className="text-sm font-medium">Select a conversation to open</p>
-            <p className="text-xs text-slate-400">All guest messages across channels in one place</p>
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 bg-slate-50">
+            <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <MessageSquare size={32} className="text-slate-300" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-slate-500">Select a conversation</p>
+              <p className="text-xs text-slate-400 mt-1">All guest messages across channels in one place</p>
+            </div>
           </div>
         )}
       </div>
