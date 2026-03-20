@@ -296,12 +296,12 @@ function CallInboxCard({
   const subject =
     call.status === 'missed'
       ? `Missed call — ${callerLabel}`
-      : (call.summary ?? `Call with ${callerLabel}`);
+      : (call.aiSummary ?? `Call with ${callerLabel}`);
 
   // First transcript line makes a more useful preview than a static string
   const preview =
-    call.transcript[0]?.content ??
-    call.summary ??
+    call.transcript?.[0]?.text ??
+    call.aiSummary ??
     'No transcript available.';
 
   const statusBadge =
