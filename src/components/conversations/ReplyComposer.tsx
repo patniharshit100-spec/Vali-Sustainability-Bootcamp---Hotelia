@@ -95,7 +95,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
           <button
             key={qr.id}
             onClick={() => handleQuickReply(qr.text)}
-            className="flex-shrink-0 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 px-2.5 py-1 rounded-full transition-colors whitespace-nowrap"
+            className="flex-shrink-0 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 px-3 py-2.5 md:py-1 rounded-full transition-colors whitespace-nowrap min-h-[44px] md:min-h-0 flex items-center"
           >
             {qr.label}
           </button>
@@ -194,7 +194,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
             <button
               onClick={handleSend}
               disabled={!text.trim() || sending}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] md:min-h-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >
               {sending ? (
                 <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />

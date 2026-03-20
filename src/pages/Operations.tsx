@@ -170,7 +170,7 @@ export const Operations: React.FC = () => {
       </div>
 
       {/* ── KANBAN BOARD ─────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto min-h-0">
+      <div className="flex-1 overflow-auto min-h-0 lg:min-h-0">
         <TaskList
           tasks={tasks}
           onSelectTask={handleSelectTask}

@@ -8,7 +8,7 @@ interface KPICardsProps {
 
 export const KPICards: React.FC<KPICardsProps> = ({ kpis }) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {kpis.map((kpi) => (
         <div key={kpi.id} className="bg-white rounded-xl border border-slate-200 p-5">
           <p className="text-xs text-slate-500 font-medium mb-2">{kpi.label}</p>

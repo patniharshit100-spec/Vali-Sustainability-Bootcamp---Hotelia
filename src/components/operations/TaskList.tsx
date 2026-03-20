@@ -30,7 +30,7 @@ export const TaskList: React.FC<TaskListProps> = ({ tasks, onSelectTask, onNewTa
     : tasks;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 p-5 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 p-5 lg:h-full">
       {COLUMNS.map((col) => {
         const colTasks = filtered.filter((t) => t.status === col.id);
         const urgentCount = colTasks.filter((t) => t.priority === 'urgent').length;
@@ -62,7 +62,7 @@ export const TaskList: React.FC<TaskListProps> = ({ tasks, onSelectTask, onNewTa
             </div>
 
             {/* Cards */}
-            <div className="flex-1 overflow-y-auto space-y-3 pb-2 pr-0.5">
+            <div className="flex-1 lg:overflow-y-auto space-y-3 pb-2 pr-0.5">
               {colTasks.length === 0 ? (
                 <div
                   className="border-2 border-dashed border-slate-200 rounded-xl h-24 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-blue-300 hover:bg-blue-50/40 transition-colors group"

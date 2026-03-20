@@ -111,7 +111,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({ selectedId, 
   const totalUnread = mockConversations.reduce((s, c) => s + c.unreadCount, 0);
 
   return (
-    <div className="flex flex-col h-full border-r border-slate-200 bg-white w-[30%] min-w-[260px] max-w-[380px] flex-shrink-0">
+    <div className="flex flex-col h-full border-r border-slate-200 bg-white w-full md:w-[30%] md:min-w-[260px] md:max-w-[380px] flex-shrink-0">
       {/* ── Top bar ───────────────────────────────────────────────────────── */}
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between mb-3">

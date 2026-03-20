@@ -11,6 +11,7 @@ import {
   Check,
   RotateCcw,
   ChevronDown,
+  ChevronLeft,
 } from 'lucide-react';
 import type { Conversation, MessageSource, ChatMessage } from '../../types';
 import { Avatar } from '../common/Avatar';
@@ -20,6 +21,7 @@ import { ReplyComposer } from './ReplyComposer';
 interface ConversationThreadProps {
   conversation: Conversation;
   onResolved?: (id: string) => void;
+  onBack?: () => void;
 }
 
 // ─── Channel config ───────────────────────────────────────────────────────────
@@ -90,6 +92,7 @@ function fmtDate(d: string): string {
 export const ConversationThread: React.FC<ConversationThreadProps> = ({
   conversation,
   onResolved,
+  onBack,
 }) => {
   const navigate = useNavigate();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -133,7 +136,17 @@ export const ConversationThread: React.FC<ConversationThreadProps> = ({
   return (
     <div className="flex flex-col h-full bg-slate-50">
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-4">
+      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 md:px-6 py-4">
+        {/* Mobile back button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="md:hidden flex items-center gap-1.5 text-sm font-semibold text-blue-600 mb-3 -ml-1 min-h-[44px] px-1"
+          >
+            <ChevronLeft size={20} />
+            All conversations
+          </button>
+        )}
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <Avatar name={conversation.guestName} size="md" className="flex-shrink-0 mt-0.5" />

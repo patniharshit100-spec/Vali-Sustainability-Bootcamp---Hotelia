@@ -6,16 +6,31 @@ import { MessageSquare } from 'lucide-react';
 
 export const Conversations: React.FC = () => {
   const [selected, setSelected] = useState<Conversation | null>(null);
+  const [mobileView, setMobileView] = useState<'list' | 'thread'>('list');
+
+  const handleSelect = (conv: Conversation) => {
+    setSelected(conv);
+    setMobileView('thread');
+  };
+
+  const handleBack = () => {
+    setMobileView('list');
+  };
 
   return (
     <div className="flex h-full overflow-hidden">
-      <ConversationList selectedId={selected?.id ?? null} onSelect={setSelected} />
+      {/* Left panel: hidden on mobile when thread is open */}
+      <div className={`${mobileView === 'thread' ? 'hidden' : 'flex'} md:flex flex-col w-full md:w-auto`}>
+        <ConversationList selectedId={selected?.id ?? null} onSelect={handleSelect} />
+      </div>
 
-      <div className="flex-1 min-w-0 overflow-hidden">
+      {/* Right panel: hidden on mobile when list is shown */}
+      <div className={`${mobileView === 'list' ? 'hidden' : 'flex'} md:flex flex-1 min-w-0 overflow-hidden flex-col`}>
         {selected ? (
           <ConversationThread
             key={selected.id}
             conversation={selected}
+            onBack={handleBack}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 bg-slate-50">
