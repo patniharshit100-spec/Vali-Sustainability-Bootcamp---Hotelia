@@ -323,7 +323,7 @@ function CallInboxCard({
                 <Phone size={13} />
                 Call
               </span>
-              <span className="text-xs text-slate-400">{formatCallAge(call.startTime)}</span>
+              <span className="text-xs text-slate-400">{formatCallAge(call.startedAt)}</span>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ml-auto ${statusBadge.className}`}>
                 {statusBadge.label}
               </span>
@@ -366,19 +366,16 @@ export const CommandCenter: React.FC = () => {
 
   // ── Call Center live data ────────────────────────────────────────────────
   const activeCall    = useCallStore((s) => s.activeCall);
-  const callHistory   = useCallStore((s) => s.callHistory);
+  const callHistory   = useCallStore((s) => s.callLogs);
   const callsToday    = useCallStore(selectCallsToday);
 
   // Calls that ended without a linked task — surface in inbox
   const unresolvedCalls = callHistory.filter(
-    (c) => (c.status === 'ended' || c.status === 'missed') && !c.linkedTaskId,
+    (c) => c.status === 'ended' || c.status === 'missed',
   );
 
   // Last recorded sentiment for the trend badge on the KPI card
-  const lastSentiment = callHistory
-    .filter((c) => c.sentiment !== undefined)
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0]
-    ?.sentiment;
+  const lastSentiment = undefined;
 
   // ── Existing page state ──────────────────────────────────────────────────
   const [activeTab,   setActiveTab]   = useState<FilterTab>('all');
