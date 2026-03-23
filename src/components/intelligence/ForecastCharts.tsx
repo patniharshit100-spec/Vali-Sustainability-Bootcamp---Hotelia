@@ -42,7 +42,7 @@ export const ForecastCharts: React.FC = () => {
               <span className="text-xs text-slate-500">{d.value}%</span>
               <div
                 className="w-full rounded-t-md bg-blue-500 transition-all"
-                style={{ height: `${(d.value / maxOcc) * 100}%` }}
+                style={{ height: `${Math.round((d.value / maxOcc) * 80)}px` }}
               />
               <span className="text-xs text-slate-400">{d.day}</span>
             </div>
@@ -68,7 +68,7 @@ export const ForecastCharts: React.FC = () => {
               <span className="text-xs text-slate-500">${(d.value / 1000).toFixed(1)}k</span>
               <div
                 className="w-full rounded-t-md bg-violet-500 transition-all"
-                style={{ height: `${(d.value / maxRev) * 100}%` }}
+                style={{ height: `${Math.round((d.value / maxRev) * 80)}px` }}
               />
               <span className="text-xs text-slate-400">{d.week}</span>
             </div>
